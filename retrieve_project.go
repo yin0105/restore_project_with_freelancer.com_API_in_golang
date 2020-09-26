@@ -107,15 +107,72 @@ func addData(curRow *xlsx.Row, cellData string) string {
 
 func main() {
 	client := &http.Client{}
-	// postData := make([]byte, 100)
-	req, err := http.NewRequest("GET", "https://www.freelancer.com/api/projects/0.1/projects/active/?compact=&project_types%5B%5D=fixed&max_avg_price=500&min_avg_price=250&query=django", nil)
+	fmt.Println("Enter 1 if the project type is fixed or 2 if the project type is hourly: ")
+	var inputData string
+	var proType string
+	reqStr := "https://www.freelancer.com/api/projects/0.1/projects/active/?compact="
+	fmt.Scanln(&proType)
+	if proType == "1" {
+		reqStr += "&project_types%5B%5D=fixed"
+	} else if proType == "2" {
+		reqStr += "&project_types%5B%5D=hourly"
+	}
+
+	if proType != "2" {
+		fmt.Println("Enter the minimum average price: ")
+		fmt.Scanln(&inputData)
+		if inputData != "" {
+			_, err := strconv.ParseFloat(inputData, 64)
+			if err == nil {
+				reqStr += "&min_avg_price=" + inputData
+			}
+		}
+
+		fmt.Println("Enter the maximum average price: ")
+		fmt.Scanln(&inputData)
+		if inputData != "" {
+			_, err := strconv.ParseFloat(inputData, 64)
+			if err == nil {
+				reqStr += "&max_avg_price=" + inputData
+			}
+		}
+	}
+
+	if proType != "1" {
+		fmt.Println("Enter the minimum average hourly rate: ")
+		fmt.Scanln(&inputData)
+		if inputData != "" {
+			_, err := strconv.ParseFloat(inputData, 64)
+			if err == nil {
+				reqStr += "&min_avg_hourly_rate=" + inputData
+			}
+		}
+
+		fmt.Println("Enter the maximum average hourly rate: ")
+		fmt.Scanln(&inputData)
+		if inputData != "" {
+			_, err := strconv.ParseFloat(inputData, 64)
+			if err == nil {
+				reqStr += "&max_avg_hourly_rate=" + inputData
+			}
+		}
+	}
+
+	fmt.Println("Enter the query: ")
+	fmt.Scanln(&inputData)
+	fmt.Println("query = " + inputData)
+	if inputData != "" {
+		reqStr += "&query=" + inputData
+	}
+
+	fmt.Println("request string = " + reqStr)
+	req, err := http.NewRequest("GET", reqStr, nil)
+	// &project_types%5B%5D=fixed&max_avg_price=500&min_avg_price=250&query=django", nil)
 	if err != nil {
 		os.Exit(1)
 	}
 	req.Header.Add("freelancer-oauth-v1", "1Dik9bnPVKncY80lae7OeE7mg1JR5r")
 	resp, err := client.Do(req)
-	fmt.Println(resp)
-	fmt.Println("#########################")
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		panic(err.Error())
@@ -123,9 +180,6 @@ func main() {
 	defer resp.Body.Close()
 	str := string(body[:])
 	str = str[strings.Index(str, "[") : strings.LastIndex(str, "]")+1]
-	fmt.Println(str)
-	fmt.Println("#########################")
-	fmt.Println(str)
 
 	// jsonData, err := json.Marshal(str)
 
@@ -404,21 +458,16 @@ func main() {
 	recordHeader := []string{"ID", "Owner ID", "Title", "Status", "Seo URL", "ID", "Code", "Sign", "Name", "Exchange Rate", "Country", "Is External", "Is Escrowcom Supported", "Submit Date", "Preview Description", "Deleted", "NonPublic", "HidBids", "Type", "Bid Period", "Minimum", "Maximum", "Featured", "Urgent", "Bid Count", "Bid Avg", "Time Submitted", "Time Updated", "Featured", "Sealed", "NonPublic", "FullTime", "Urgent", "Qualified", "NDA", "Ip Contract", "Non Complete", "Project Management", "Pf Only", "Language", "Hireme", "Frontend Project Status", "Country", "Local", "Negotiated", "Time Free Bids Expire", "PoolIds", "EnterpriseIds", "IsEscrowProject", "IsSellerKycRequired", "IsBuyerKycRequired", "ProjectRejectReason"}
 	writer.Write(recordHeader)
 	for _, proj := range jsondata {
-		fmt.Println("*********************")
-		fmt.Println(proj)
+		// fmt.Println("*********************")
+		// fmt.Println(proj)
 		var record []string
-		fmt.Printf("Address = %p\n", &record)
-		// record = append(record, "abc")
 		curRow := sheet.AddRow()
-		// record = append(record, strconv.FormatUint(uint64(proj.Owner_ID), 10))
-		// fmt.Println(record[0])
-		// fmt.Println(record[1])
 		record = append(record, addData(curRow, strconv.Itoa(proj.ID)))
 		record = append(record, addData(curRow, strconv.FormatUint(uint64(proj.Owner_ID), 10)))
 		record = append(record, addData(curRow, proj.Title))
 		record = append(record, addData(curRow, proj.Status))
 		record = append(record, addData(curRow, proj.Seo_URL))
-		fmt.Printf("len = %s  Adderss000= %p\n", strconv.Itoa(len(record)), &record)
+
 		// Currency                CurrencyStruct
 		record = append(record, addData(curRow, strconv.Itoa(proj.Currency.ID)))
 		record = append(record, addData(curRow, proj.Currency.Code))
